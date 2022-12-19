@@ -2,11 +2,11 @@
     "name": "crud-api",
     "version": "1.0.0",
     "description": "",
-    "main": "webpack.base.config.js",
+    "main": "webpack.config.ts",
     "scripts": {
+        "start": "cross-env NODE_ENV=development webpack --watch",
         "build": "cross-env NODE_ENV=production webpack --no-devtool --mode=production",
-        "watch:dev": "cross-env NODE_ENV=development webpack --watch",
-        "run:dev": "cross-env NODE_ENV=development nodemon dist/index.js",
+        "run:build": "cross-env NODE_ENV=development nodemon dist/",
         "test": "cross-env NODE_ENV=test jest --watch",
         "lint": "eslint --ext .ts,.js --ignore-path .gitignore . --fix"
     },
@@ -46,10 +46,14 @@
         "ts-loader": "^9.3.0",
         "ts-node": "^10.9.1",
         "typescript": "^4.7.4",
+        "uuid": "^9.0.0",
         "webpack": "^5.37.1",
         "webpack-cli": "^4.5.0",
         "webpack-dev-server": "^3.11.2",
         "webpack-merge": "^5.7.3",
         "webpack-node-externals": "^3.0.0"
+    },
+    "dependencies": {
+        "@types/uuid": "^9.0.0"
     }
 }
