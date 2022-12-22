@@ -5,10 +5,12 @@
     "main": "webpack.config.ts",
     "scripts": {
         "start": "cross-env NODE_ENV=development webpack --watch",
-        "build": "cross-env NODE_ENV=production webpack --no-devtool --mode=production",
+        "build": "cross-env NODE_ENV=production webpack --no-devtool",
         "run:build": "cross-env NODE_ENV=development nodemon dist/",
         "test": "cross-env NODE_ENV=test jest --watch",
-        "lint": "eslint --ext .ts,.js --ignore-path .gitignore . --fix"
+        "lint": "eslint --ext .ts,.js --ignore-path .gitignore . --fix",
+        "start:dev": "cross-env NODE_ENV=development webpack --watch",
+        "start:prod": "cross-env NODE_ENV=production webpack --no-devtool --watch"
     },
     "repository": {
         "type": "git",
@@ -30,6 +32,7 @@
         "copy-webpack-plugin": "^7.0.0",
         "cross-env": "^7.0.3",
         "css-loader": "^5.1.0",
+        "dotenv": "^16.0.3",
         "eslint": "^7.27.0",
         "eslint-config-prettier": "^8.3.0",
         "eslint-plugin-import": "^2.23.3",

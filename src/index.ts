@@ -1,9 +1,10 @@
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import Controller from './controllers';
-
 import getReqData from './lib/getReqData';
 import { isUserData } from './lib/isUserData';
 import isUUID from './lib/isUUID';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 
