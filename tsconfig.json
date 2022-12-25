@@ -4,14 +4,14 @@
     "noImplicitAny": true,
     "strict": true,
     "sourceMap": true,
-    "allowJs": true,
+    //"allowJs": true,
     "moduleResolution": "node",
     "target": "esnext",
     "module": "esnext",
     //"allowSyntheticDefaultImports": true,
-    "declaration": true,
-    "declarationMap": true,
-    "composite": true,
+    //"declaration": true,
+    //"declarationMap": true,
+    //"composite": true,
   },
   "ts-node": {
     "compilerOptions": {

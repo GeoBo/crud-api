@@ -87,7 +87,6 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
                 const deletedUser = await new Controller().deleteUser(id);
                 res.writeHead(204, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify(deletedUser));
-                //res.end(JSON.stringify(`User with id ${id} is deleteted`));
             } catch (error) {
                 res.writeHead(404, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ message: error }));
@@ -102,6 +101,10 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
     }
 });
 
-server.listen(PORT, () => {
-    console.log(`server started on port: ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+    server.listen(PORT, () => {
+        console.log(`server started on port: ${PORT}`);
+    });
+}
+
+export default server;

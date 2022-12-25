@@ -9,7 +9,7 @@ const NODE_ENV = process.env.NODE_ENV == 'development' ? 'development' : 'produc
 const config: webpack.Configuration = {
     entry: './src/index.ts',
     mode: NODE_ENV,
-    devtool: NODE_ENV === 'development' ? 'inline-source-map' : '',
+    devtool: NODE_ENV === 'development' ? 'inline-source-map' : false,
     target: 'node',
     externals: [nodeExternals()],
     output: {

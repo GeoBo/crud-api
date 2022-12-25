@@ -25,7 +25,6 @@ class Controller {
                 ...user,
             };
             users.push(newUser);
-            //console.log(users);
             resolve(newUser);
         });
     }
