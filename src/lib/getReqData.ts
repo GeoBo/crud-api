@@ -10,8 +10,11 @@ function getReqData(req: IncomingMessage) {
             });
 
             req.on('end', () => {
-                const parsed = JSON.parse(body);
-                resolve(parsed);
+                if (!body) reject('Empty request body');
+                else {
+                    const parsed = JSON.parse(body);
+                    resolve(parsed);
+                }
             });
         } catch (error) {
             reject(error);

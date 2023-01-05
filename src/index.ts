@@ -1,110 +1,63 @@
-import { createServer, IncomingMessage, ServerResponse } from 'http';
-import Controller from './controllers';
-import getReqData from './lib/getReqData';
-import { isUserData } from './lib/isUserData';
-import isUUID from './lib/isUUID';
+import cluster from 'cluster';
+import * as http from 'http';
+import { IncomingMessage, ServerResponse } from 'http';
+import { cpus } from 'os';
+import IUser from './interfaces/IUser';
+import IWorkerMessage from './interfaces/IWorkerMessage';
+import server from './server';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-const PORT = process.env.PORT || 5000;
+const mainPort = Number(process.env.PORT || 5000);
+let current = 1;
+let mainServer = server;
 
-const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-    try {
-        //Get users
-        if (req.url === '/api/users' && req.method === 'GET') {
-            const users = await new Controller().getUsers();
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(users));
-        }
-        //Get user
-        else if (req.url?.match(/\/api\/users\/([0-9a-fA-F]+)/) && req.method === 'GET') {
-            const id = req.url.split('/')[3];
-
-            if (!isUUID(id)) {
-                res.writeHead(400, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ message: 'UserId is invalid' }));
+if (process.env.SERVER_MODE === 'cluster') {
+    if (cluster.isPrimary) {
+        console.log(`Primary ${process.pid} is running`);
+        const redirectHandler = (req: IncomingMessage, res: ServerResponse) => {
+            // console.log('redirectHandler: ' + req.url);
+            if (req.url === '/favicon.ico') {
+                res.writeHead(204);
+                res.end();
                 return;
             }
-            try {
-                const user = await new Controller().getUser(id);
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(user));
-            } catch (error) {
-                res.writeHead(404, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ message: error }));
+            const request = http.request({ ...req, path: req.url, port: mainPort + current }, (response) => {
+                res.writeHead(response.statusCode || 500, response.headers);
+                response.pipe(res, { end: true });
+            });
+            req.pipe(request, { end: true });
+            //request.end();
+            if (current >= cpus().length - 1) {
+                current = 1;
+            } else {
+                current += 1;
             }
-        }
-        //Create user
-        else if (req.url === '/api/users' && req.method === 'POST') {
-            try {
-                const data = await getReqData(req);
-                if (!isUserData(data)) {
-                    res.writeHead(400, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ message: 'Request body does not contain required fields' }));
-                    return;
-                }
-                const user = await new Controller().createUser(data);
-                res.writeHead(201, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(user));
-            } catch (error) {
-                res.writeHead(404, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ message: error }));
-            }
-        }
+        };
+        mainServer = http.createServer(redirectHandler);
+        mainServer.listen(mainPort);
 
-        //Update user
-        else if (req.url?.match(/\/api\/users\/([0-9a-fA-F]+)/) && req.method === 'PUT') {
-            const id = req.url.split('/')[3];
-            if (!isUUID(id)) {
-                res.writeHead(400, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ message: 'UserId is invalid' }));
-                return;
-            }
-            try {
-                const data = await getReqData(req);
-                if (!isUserData(data)) {
-                    res.writeHead(400, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ message: 'Request body does not contain required fields' }));
-                    return;
-                }
-                const updatedUser = await new Controller().updateUser({ id, ...data });
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(updatedUser));
-            } catch (error) {
-                res.writeHead(404, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ message: error }));
-            }
+        for (let i = 1; i <= cpus().length - 1; i += 1) {
+            const worker = cluster.fork({ TASK_PORT: mainPort + i });
+            worker.on('message', (msg: IWorkerMessage) => {
+                console.log(msg);
+                if (msg.task === 'sync') syncWorkers(msg.data);
+            });
         }
-        //Delete user
-        else if (req.url?.match(/\/api\/users\/([0-9a-fA-F]+)/) && req.method === 'DELETE') {
-            const id = req.url.split('/')[3];
-            if (!isUUID(id)) {
-                res.writeHead(400, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ message: 'UserId is invalid' }));
-                return;
-            }
-            try {
-                const deletedUser = await new Controller().deleteUser(id);
-                res.writeHead(204, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(deletedUser));
-            } catch (error) {
-                res.writeHead(404, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ message: error }));
-            }
-        } else {
-            res.writeHead(404, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ message: 'Route not found' }));
-        }
-    } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'Internal Server Error' }));
+    } else if (cluster.isWorker) {
+        console.log(`Worker ${process.pid} is running`);
+        const workerPort = process.env['TASK_PORT'];
+        server.listen(workerPort);
     }
-});
-
-if (process.env.NODE_ENV !== 'test') {
-    server.listen(PORT, () => {
-        console.log(`server started on port: ${PORT}`);
-    });
+} else {
+    mainServer = server.listen(mainPort);
 }
 
-export default server;
+function syncWorkers(data: IUser[]) {
+    for (const worker of Object.values(cluster.workers || [])) {
+        console.log('main send to worker: ' + worker);
+        worker?.send({ task: 'sync', data });
+    }
+}
+
+export default mainServer;

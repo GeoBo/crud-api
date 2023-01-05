@@ -1,15 +1,17 @@
-import users from './base/users';
+import initialUsers from './base/users';
 import IUser from './interfaces/IUser';
 import { v4 as uuidv4 } from 'uuid';
 
 class Controller {
+    private users = initialUsers;
+
     async getUsers() {
-        return new Promise((resolve) => resolve(users));
+        return new Promise((resolve) => resolve(this.users));
     }
 
     async getUser(id: string) {
         return new Promise((resolve, reject) => {
-            const user = users.find((user) => user.id === id);
+            const user = this.users.find((user) => user.id === id);
             if (!user) {
                 reject(`No user with id ${id} found`);
             }
@@ -24,14 +26,16 @@ class Controller {
                 id: uuidv4(),
                 ...user,
             };
-            users.push(newUser);
+            this.users.push(newUser);
+
+            this.syncUsers();
             resolve(newUser);
         });
     }
 
     async updateUser(data: IUser) {
         return new Promise((resolve, reject) => {
-            const user = users.find((user) => user.id === data.id);
+            const user = this.users.find((user) => user.id === data.id);
             if (!user) {
                 reject(`No user with id ${data.id} found`);
                 return;
@@ -41,22 +45,33 @@ class Controller {
             user.age = age;
             user.hobbies = hobbies;
 
+            this.syncUsers();
             resolve(user);
         });
     }
 
     async deleteUser(id: string) {
         return new Promise((resolve, reject) => {
-            const userIndex = users.findIndex((user) => user.id === id);
+            const userIndex = this.users.findIndex((user) => user.id === id);
             if (userIndex === -1) {
                 reject(`No user with id ${id} found`);
                 return;
             }
-            const user = { ...users[userIndex] };
-            users.splice(userIndex, 1);
+            const user = { ...this.users[userIndex] };
+            this.users.splice(userIndex, 1);
 
+            this.syncUsers();
             resolve(user);
         });
+    }
+
+    setUsers(users: IUser[]) {
+        this.users = users;
+    }
+
+    syncUsers() {
+        console.log('worker send data');
+        if (process.send) process.send({ task: 'sync', data: this.users });
     }
 }
 
