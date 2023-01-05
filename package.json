@@ -11,7 +11,7 @@
         "lint": "eslint --ext .ts,.js --ignore-path .gitignore . --fix",
         "start:dev": "cross-env NODE_ENV=development webpack --watch",
         "start:prod": "cross-env NODE_ENV=production webpack --watch",
-        "start:multi": "cross-env NODE_ENV=development SERVER_MODE=cluster webpack --watch"
+        "start:multi": "cross-env NODE_ENV=production SERVER_MODE=cluster webpack --watch"
     },
     "repository": {
         "type": "git",

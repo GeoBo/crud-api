@@ -1,47 +1,28 @@
 import cluster from 'cluster';
 import * as http from 'http';
-import { IncomingMessage, ServerResponse } from 'http';
 import { cpus } from 'os';
 import IUser from './interfaces/IUser';
 import IWorkerMessage from './interfaces/IWorkerMessage';
+import redirectHandler from './lib/redirectHandler';
 import server from './server';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
 const mainPort = Number(process.env.PORT || 5000);
-let current = 1;
-let mainServer = server;
+
+let mainServer = server; //export server for testing
 
 if (process.env.SERVER_MODE === 'cluster') {
     if (cluster.isPrimary) {
         console.log(`Primary ${process.pid} is running`);
-        const redirectHandler = (req: IncomingMessage, res: ServerResponse) => {
-            // console.log('redirectHandler: ' + req.url);
-            if (req.url === '/favicon.ico') {
-                res.writeHead(204);
-                res.end();
-                return;
-            }
-            const request = http.request({ ...req, path: req.url, port: mainPort + current }, (response) => {
-                res.writeHead(response.statusCode || 500, response.headers);
-                response.pipe(res, { end: true });
-            });
-            req.pipe(request, { end: true });
-            //request.end();
-            if (current >= cpus().length - 1) {
-                current = 1;
-            } else {
-                current += 1;
-            }
-        };
+
         mainServer = http.createServer(redirectHandler);
         mainServer.listen(mainPort);
 
-        for (let i = 1; i <= cpus().length - 1; i += 1) {
+        for (let i = 1; i <= cpus().length; i += 1) {
             const worker = cluster.fork({ TASK_PORT: mainPort + i });
             worker.on('message', (msg: IWorkerMessage) => {
-                console.log(msg);
-                if (msg.task === 'sync') syncWorkers(msg.data);
+                if (msg.task === 'sync') syncWorkers(msg.data, worker.id);
             });
         }
     } else if (cluster.isWorker) {
@@ -50,12 +31,13 @@ if (process.env.SERVER_MODE === 'cluster') {
         server.listen(workerPort);
     }
 } else {
-    mainServer = server.listen(mainPort);
+    if (process.env.NODE_ENV !== 'test') mainServer.listen(mainPort);
 }
 
-function syncWorkers(data: IUser[]) {
+function syncWorkers(data: IUser[], id: number) {
     for (const worker of Object.values(cluster.workers || [])) {
-        console.log('main send to worker: ' + worker);
+        if (worker?.id === id) continue;
+        console.log('main send to worker: ' + worker?.id);
         worker?.send({ task: 'sync', data });
     }
 }

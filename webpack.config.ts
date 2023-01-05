@@ -26,7 +26,7 @@ const config: webpack.Configuration = {
             ignore: ['*.js.map'],
             verbose: true,
             ext: 'js,json',
-            nodeArgs: ['--inspect'],
+            //nodeArgs: ['--inspect'],
         }),
         new ESLintPlugin({
             extensions: [`ts`],

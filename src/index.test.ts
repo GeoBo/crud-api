@@ -1,5 +1,5 @@
 import * as request from 'supertest';
-import app from './server';
+import app from './index';
 import IUser from './interfaces/IUser';
 import isUUID from './lib/isUUID';
 

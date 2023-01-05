@@ -98,18 +98,12 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ message: 'Internal Server Error' }));
     }
-    console.log(process.env['TASK_PORT']);
+    if (process.env['TASK_PORT']) console.log(process.env['TASK_PORT']);
 });
 
 process.on('message', (msg: IWorkerMessage) => {
-    console.log('worker get data');
+    console.log('worker get data: ' + process?.pid);
     if (msg.task === 'sync') controller.setUsers(msg.data);
 });
-
-// if (process.env.NODE_ENV !== 'test') {
-//     server.listen(PORT, () => {
-//         console.log(`server started on port: ${PORT}`);
-//     });
-// }
 
 export default server;
