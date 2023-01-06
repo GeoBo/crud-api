@@ -71,7 +71,7 @@ class Controller {
 
     syncUsers() {
         if (!process.env['TASK_PORT']) return;
-        console.log('worker send data');
+        console.log(`worker ${process.pid} send data to main`);
         if (process.send) process.send({ task: 'sync', data: this.users });
     }
 }
