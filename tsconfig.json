@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist/",
+    "noImplicitAny": true,
+    "strict": true,
+    "sourceMap": true,
+    //"allowJs": true,
+    "moduleResolution": "node",
+    "target": "esnext",
+    "module": "esnext",
+    //"allowSyntheticDefaultImports": true,
+    //"declaration": true,
+    //"declarationMap": true,
+    //"composite": true,
+  },
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS",
+      "esModuleInterop": true
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
+}
